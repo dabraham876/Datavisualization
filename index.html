@@ -30,17 +30,17 @@
 
 <!-- Create a div where the graph will take place -->
 
-<div class="div-middle">
-  Use the slider to view the monthly data <b>
-    <div id="annotation"></div>
-  </b>
-</div>
+
 
 <div class="div-middle">
   <input type="range" min="1" max="12" step="1" id="month" defaultValue="1" onchange="onSliderValChange(this.value)">
 </div>
 
-
+<div class="div-middle">
+  Use the slider to view the monthly data <b>
+    <div id="annotation"></div>
+  </b>
+</div>
 <div id="graph"></div>
 <script>
   var monthSelected = 1;
