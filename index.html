@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+<head>
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+  <h1>Post Covid Market Recovery Comparison</h1>
+
+  <p>This is a monthly comparison visualization</p>
+
+</body>
+
+<!-- Add 2 buttons -->
+<button onclick="updateVal(1)">DOW</button>
+<button onclick="updateVal(2)">IXIC</button>
+<button onclick="updateVal(3)">BitCoinUS</button>
+
+<!-- Create a div where the graph will take place -->
+<div id="graph"></div>
+
+
+<div class="div-middle">
+  <input type="range" min="1" max="12" step="1" id="month" defaultValue="1" onchange="onSliderValChange(this.value)">
+</div>
+
+<div class="div-middle">
+  Annotation sample <b>
+    <div id="annotation"></div>
+  </b>
+</div>
+
+<script>
+  var monthSelected = 1;
+  var yearSelected = 2020;
+  var selectedPg = 1;
+  var selData = null;
+
+
+  var ymin, ymax;
+
+  function updateVal(val) {
+    if (val === 1) {
+      selectedPg = 1;
+      annot = annot1;
+
+      selData = getFilteredData(data1);
+      update(selData);
+    }
+    if (val === 2) {
+      selectedPg = 2;
+      annot = annot2;
+      selData = getFilteredData(data2);
+      update(selData);
+    }
+    if (val === 3) {
+      selectedPg = 3;
+      annot = annot3;
+      selData = getFilteredData(data3);
+      update(selData);
+    }
+
+    updateAnnotation();
+  }
+
+  function onSliderValChange(val) {
+    this.monthSelected = val;
+    
+    if (this.monthSelected >= 3)
+      svg.selectAll(".annotation-group1").style("opacity", 1);
+
+
+    if (this.monthSelected < 3) {
+      svg.selectAll(".annotation-group1").style("opacity", 0);
+    }
+
+
+
+    if (this.monthSelected >= 9)
+      svg.selectAll(".annotation-group2").style("opacity", 1);
+
+    if (this.monthSelected < 9)
+      svg.selectAll(".annotation-group2").style("opacity", 0);
+
+
+    updateVal(selectedPg);
+
+
+  }
+
+  function updateAnnotation() {
+    var displayEl = document.getElementById("annotation");
+    displayEl.innerHTML = monthSelected + "/" + yearSelected;
+  }
+
+  // filter data source and get the year and month data we need.
+  function getFilteredData(data) {
+    //filter based on year 
+    yrData = data.filter(function (point) { return point.year === parseInt(yearSelected); });
+
+    ymin = d3.min(yrData, function(d) {
+      return d.val -100;
+    });
+ 
+
+    ymax = d3.max(yrData, function(d) {
+      return d.val;
+    });
+
+
+    //retrive year to month data for the year.
+    return yrData.filter(function (point) { return point.month <= parseInt(monthSelected); });
+  }
+
+  // Create 3 datasets
+  var data1;  
+  var data2;
+  var data3;
+
+  d3.json("data1.json", function (d1) {
+    this.data1 = d1;
+
+    d3.json("data2.json", function (d2) {
+      this.data2 = d2;
+
+      d3.json("data3.json", function (d4) {
+        this.data3 = d4;
+
+        updateVal(1);
+      });
+    });
+
+
+  });
+
+
+
+  var annot1 = "DOW";
+  var annot2 = "IXC";
+  var annot3 = "BitCoinUS";
+
+  var annot = "";
+  // set the dimensions and margins of the graph
+  var margin = { top: 60, right: 150, bottom: 80, left: 50 },
+    width = 560 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  var svg = d3.select("#graph")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+      "translate(" + margin.left + "," + margin.top + ")");
+
+  // Initialise a X axis:
+  var x = d3.scaleLinear().range([0, width]);
+  var xAxis = d3.axisBottom().scale(x);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .attr("class", "myXaxis")
+
+  // Initialize an Y axis
+  var y = d3.scaleLinear().range([height, 0]);
+  var yAxis = d3.axisLeft().scale(y);
+  svg.append("g")
+    .attr("class", "myYaxis")
+
+  // Create a function that takes a dataset as input and update the plot:
+  function update(data) {
+
+
+
+
+
+    // Create the X axis:
+    //x.domain([d3.min(data, function (d) { return d.month }), d3.max(data, function (d) { return d.month })]);
+    x.domain([d3.min(data, function (d) { return 1 }), d3.max(data, function (d) { return 12 })]);
+    svg.selectAll(".myXaxis").transition()
+      //.duration(3000)
+      .call(xAxis);
+
+    // create the Y axis
+    //y.domain([d3.min(data, function (d) { return d.val }), d3.max(data, function (d) { return d.val })]);
+    y.domain([ymin, ymax]);
+    svg.selectAll(".myYaxis")
+      .transition()
+      // .duration(3000)
+      .call(yAxis);
+
+    // Create a update selection: bind to the new data
+    var container = svg.selectAll(".linegraph")
+      .data([data], function (d) { return d.month });
+
+    // Update the line
+    container.enter()
+      .append("path")
+      .attr("class", "linegraph")
+      .merge(container)
+      .transition()
+      //.duration(3000)
+      .attr("d", d3.line()
+        .x(function (d) { return x(d.month); })
+        .y(function (d) { return y(d.val); }))
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 2.5)
+
+  }
+
+  // Create the circle that travels along the curve of chart
+  var focus = svg
+    .append('g')
+    .append('circle')
+    .style("fill", "none")
+    .attr("stroke", "black")
+    .attr('r', 3.5)
+    .style("opacity", 1)
+
+  // Create the text that travels along the curve of chart
+  var focusText = svg
+    .append('g')
+    .append('text')
+    .style("opacity", 0)
+    .attr("text-anchor", "left")
+    .attr("alignment-baseline", "middle")
+
+  // This allows to find the closest X index of the mouse:
+  var bisect = d3.bisector(function (d) { return d.month; }).left;
+
+  // Create a rect on top of the svg area: this rectangle recovers mouse position
+  svg
+    .append('rect')
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .attr('width', width)
+    .attr('height', height)
+    .on('mouseover', mouseover)
+    .on('mousemove', mousemove)
+    .on('mouseout', mouseout);
+
+  var parseDate = function (d) { return d.month }
+  const annotations1 = [
+    // first annotation
+    {
+      note: {
+        label: "Earnings plummeted",
+        title: "2020 March",
+        wrap: 150,  // try something smaller to see text split in several lines
+        padding: 10   // More = text lower
+
+      },
+      color: ["#cc0000"],
+      x: x(parseDate(3)),
+      y: y(21917.16),
+      dy: 200,
+      dx: 100,
+      //type: d3.annotationCalloutElbow,
+      //subject: { radius: 50, radiusPadding: 10 },
+    }
+
+
+  ]
+
+  const annotations2 = [
+
+    // second annotation
+    {
+      note: {
+        label: "Strong Recovery",
+        title: "After September",
+        wrap: 150,  // try something smaller to see text split in several lines
+        padding: 10   // More = text lower
+
+      },
+      color: [" #00b300"],
+      x: x(parseDate('9')),
+      y: y(27781.7),
+      dy: 100,
+      dx: 350,
+      //type: d3.annotationCalloutElbow,
+      subject: { radius: 50, radiusPadding: 10 },
+    },
+
+  ]
+  const type = d3.annotationLabel
+  const makeAnnotations1 = d3.annotation()
+    .notePadding(15)
+    .type(type)
+    .annotations(annotations1)
+
+  const makeAnnotations2 = d3.annotation()
+    .notePadding(15)
+    .type(type)
+    .accessorsInverse({
+      date: d => timeFormat(x.invert(d.x)),
+      close: d => y.invert(d.y)
+    })
+    .annotations(annotations2)
+
+  svg
+    .append("g")
+    .attr("class", "annotation-group1")
+    .attr("id", "annotation1")
+    .style("opacity", 0)
+    .call(makeAnnotations1);
+
+  svg
+    .append("g")
+    .attr("class", "annotation-group2")
+    .attr("id", "annotation2")
+    .style("opacity", 0)
+    .call(makeAnnotations2);
+
+  // create a tooltip
+  var Tooltip = d3.select("#div_template")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+
+  // What happens when the mouse move -> show the annotations at the right positions.
+  function mouseover() {
+
+    focus.style("opacity", 1)
+    focusText.style("opacity", 1)
+  }
+
+  function mousemove() {
+
+    // recover coordinate we need
+    var x0 = x.invert(d3.mouse(this)[0]);
+    var i = bisect(selData, x0, 0);
+    if (selData[i]) {
+      selectedData = selData[i]
+      focus
+        .attr("cx", x(selectedData.month))
+        .attr("cy", y(selectedData.val))
+      focusText
+        .html("closing price:<br>" + selectedData.val)
+        .attr("x", x(selectedData.month) + 15)
+        .attr("y", y(selectedData.val))
+    }
+  }
+  function mouseout() {
+
+    focus.style("opacity", 0)
+    focusText.style("opacity", 0)
+  }
+
+
+  //initial page load
+  //updateVal(1);
+
+</script>
