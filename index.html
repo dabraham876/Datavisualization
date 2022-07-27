@@ -33,15 +33,15 @@
 
 
 
-
+<div class="div-middle">
+  <input type="range" min="1" max="12" step="1" id="month" defaultValue="1" onchange="onSliderValChange(this.value)">
+</div>
 <div class="div-middle">
   Use the slider to view the monthly data <b>
     <div id="annotation"></div>
   </b>
 </div>
-<div class="div-middle">
-  <input type="range" min="1" max="12" step="1" id="month" defaultValue="1" onchange="onSliderValChange(this.value)">
-</div>
+
 <div id="graph"></div>
 <p>The 3 scenes compares the closing price across 3 markets DOW, Nasdaq and BitcoinUS in 2020. Click on one of the buttons to view the closing price for each month</p>
 <script>
